@@ -9,6 +9,9 @@
 
 #define PACKED __attribute__((packed))
 
+#define TOKEN_COMMENT '\\'
+#define TOKEN_SEPARATOR ';'
+
 struct PACKED SymbolRecord;
 
 typedef struct PACKED
@@ -360,7 +363,7 @@ static char consumeToken()
 
     for (;;)
     {
-        if ((currentByte == '\\') || (currentByte == ';'))
+        if (currentByte == TOKEN_COMMENT)
         {
             do
                 consumeByte();
@@ -376,7 +379,7 @@ static char consumeToken()
     if (currentByte == '\n')
     {
         currentFile->lineNumber++;
-        currentByte = ':';
+        currentByte = TOKEN_SEPARATOR;
     }
 
     switch (currentByte)
@@ -1044,7 +1047,7 @@ static void consumeExpressionNode(uint8_t sp)
     switch (token)
     {
         case ')':
-        case ';':
+        case TOKEN_SEPARATOR:
         case ',':
             return;
 
@@ -1362,7 +1365,7 @@ static void consumeZendloop()
 
 static void emitConditionalJump(uint8_t xor)
 {
-    if (token == ';')
+    if (token == TOKEN_SEPARATOR)
         addExpressionRecord(0x4c); /* JMP */
     else
     {
@@ -1437,7 +1440,7 @@ static void consumeInclude()
 {
     expect(TOKEN_STRING);
     openFile(parseBuffer);
-    token = currentByte = ';';
+    token = currentByte = TOKEN_SEPARATOR;
 }
 
 static void lookupAndCall(const SymbolCallbackEntry* entries)
@@ -1490,7 +1493,7 @@ static void parse()
             case TOKEN_EOF:
                 goto exit;
 
-            case ';':
+            case TOKEN_SEPARATOR:
                 consumeToken();
                 continue;
 
@@ -1570,7 +1573,7 @@ static void parse()
 
         if (token == 26)
             break;
-        if (token != ';')
+        if (token != TOKEN_SEPARATOR)
             fatal("unexpected garbage at end of line");
         consumeToken();
     }
